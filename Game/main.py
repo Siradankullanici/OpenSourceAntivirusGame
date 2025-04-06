@@ -95,24 +95,21 @@ class Antivirus(SecurityTool):
                 return True
         return False
 
-# Yeni gelişmiş antivirüs sınıfı; vendor bilgileri, yanlış tespit riski ve firewall desteği içerir.
+# Gelişmiş antivirüs ürünleri; vendor bilgileri, yanlış tespit riski ve firewall desteği içerir.
 class AdvancedAntivirus(Antivirus):
     def __init__(self, vendor, price, detection_rate, false_positive_rate, has_firewall, premium, extra_features=None):
-        # İsim, örneğin "Norton Antivirus Premium" şeklinde oluşturulsun.
         name = vendor + (" Premium" if premium else "")
         super().__init__(name, price, detection_rate)
         self.vendor = vendor
-        self.false_positive_rate = false_positive_rate  # % olarak; örneğin 0.1 ise %10 yanlış tespit
+        self.false_positive_rate = false_positive_rate  # Örneğin 0.1 ise %10 yanlış tespit
         self.has_firewall = has_firewall
         self.premium = premium
         self.extra_features = extra_features or []
     def apply(self, website):
         if website.is_infected and not website.crashed:
-            # Gelişmiş tespit şansı
             if random.random() < self.power:
                 # Yanlış tespit riski
                 if random.random() < self.false_positive_rate:
-                    # Yanlış pozitif; temiz olmadığı halde yanlışlıkla temizlenme bildirimi
                     return "false_positive"
                 website.clean()
                 return True
@@ -189,12 +186,11 @@ class Wiper(VirusTool):
         return False
 
 # ------------------------
-# FARKLI GÜVENLİK ARAÇLARI: Firewall, HIPS, IDS
+# DİĞER GÜVENLİK ARAÇLARI: Firewall, HIPS, IDS
 # ------------------------
 class Firewall(SecurityTool):
     def __init__(self, name, price, power):
         super().__init__(name, price, power)
-        
     def apply(self, website):
         website.set_protection(True)
         return True
@@ -202,7 +198,6 @@ class Firewall(SecurityTool):
 class HIPS(SecurityTool):
     def __init__(self, name, price, power):
         super().__init__(name, price, power)
-        
     def mitigate_infection(self, base_chance):
         reduction = self.power * 0.2
         return max(0.1, base_chance - reduction)
@@ -210,7 +205,6 @@ class HIPS(SecurityTool):
 class IDS(SecurityTool):
     def __init__(self, name, price, power):
         super().__init__(name, price, power)
-        
     def analyze(self, websites):
         anomalies = [site.url for site in websites if site.is_infected and not site.protected and not site.crashed]
         return anomalies
@@ -224,18 +218,16 @@ class MarketDialog(QDialog):
         self.setWindowTitle("Market - Güvenlik Araçları")
         self.parent = parent
         self.init_ui()
-
     def init_ui(self):
         layout = QFormLayout()
         layout.addRow(QLabel("Satın alacağınız ürünü seçin:"))
         self.item_list = QListWidget()
-
-        # Ürün listesine; hem eski antivirüs, virüs araçları, firewall, HIPS, IDS hem de gelişmiş antivirüs ürünleri ekleniyor.
+        # Ürün listesine; hem eski antivirüs/virüs araçları, firewall, HIPS, IDS hem de gelişmiş antivirüs ürünleri ekleniyor.
         self.items = [
             # Geleneksel antivirüsler
             Antivirus("Basic Antivirus", 100, 0.65),
             Antivirus("Advanced Antivirus", 250, 0.80),
-            # Gelişmiş antivirüs vendorleri (farklı markalar, özellikler, yanlış tespit riski, firewall desteği vb.)
+            # Gelişmiş antivirüs vendorleri
             AdvancedAntivirus("Norton", 300, 0.85, 0.05, True, True, extra_features=["Zero Trust"]),
             AdvancedAntivirus("Kaspersky", 320, 0.88, 0.04, True, True, extra_features=["Signature Update"]),
             AdvancedAntivirus("Bitdefender", 340, 0.90, 0.03, True, True, extra_features=["AI Tespiti"]),
@@ -272,7 +264,6 @@ class MarketDialog(QDialog):
             IDS("Simple IDS", 130, 0.60),
             IDS("Smart IDS", 320, 0.85),
         ]
-
         for item in self.items:
             desc = f"{item.name} - Fiyat: {item.price} Kredi, Güç: {item.power}"
             self.item_list.addItem(QListWidgetItem(desc))
@@ -281,7 +272,6 @@ class MarketDialog(QDialog):
         purchase_button.clicked.connect(self.purchase_item)
         layout.addRow(purchase_button)
         self.setLayout(layout)
-
     def purchase_item(self):
         selected_items = self.item_list.selectedItems()
         if not selected_items:
@@ -302,7 +292,6 @@ class SiteContentDialog(QDialog):
         self.setWindowTitle(f"Site İçeriği - {website.url}")
         self.resize(600, 500)
         self.init_ui()
-
     def init_ui(self):
         layout = QVBoxLayout()
         content = fake.paragraph(nb_sentences=5)
@@ -313,14 +302,12 @@ class SiteContentDialog(QDialog):
         content_text.setReadOnly(True)
         content_text.setText(content)
         layout.addWidget(content_text)
-
         status = f"Durum: {'ÇÖKÜK' if self.website.crashed else ('Kilitli' if self.website.locked else 'Normal')}"
         if self.website.infection_type:
             status += f" | Enfekte: {self.website.infection_type}"
         status_label = QLabel(status)
         status_label.setStyleSheet("font-style: italic;")
         layout.addWidget(status_label)
-
         if self.website.is_infected:
             tree_label = QLabel("Dosya Ağacı (Enfekte dosyalar):")
             tree_label.setStyleSheet("font-weight: bold;")
@@ -352,13 +339,15 @@ class GameBoardWidget(QWidget):
         self.score = 0
         self.owned_tools = []     # Aktif satın alınmış araçlar
         self.tool_timers = []     # (tool, QTimer) çiftleri
-        # Firewall uygulamaları için site bazlı timer saklanacak
         self.firewall_effects = {}  # {website: QTimer}
-        # Antivirus imza güncelleme için geçici yükseltmeleri saklayalım
         self.upgraded_antiviruses = {}
         self.init_ui()
         self.generate_websites()
         self.init_timers()
+        # Global rastgele olaylar için timer
+        self.global_event_timer = QTimer()
+        self.global_event_timer.timeout.connect(self.global_event)
+        self.global_event_timer.start(15000)  # Her 15 saniyede bir global olay
 
     def init_ui(self):
         layout = QVBoxLayout()
@@ -446,7 +435,6 @@ class GameBoardWidget(QWidget):
 
     def update_game(self):
         for website in self.websites:
-            # NOT: Artık global firewall uygulanmıyor; kullanıcı seçilen siteye kuruyor.
             if not website.crashed:
                 if not website.is_infected and not website.protected and random.random() < 0.15:
                     website.infect()
@@ -470,10 +458,36 @@ class GameBoardWidget(QWidget):
             self.log_event("Tüm siteler enfekte/çökmüş! Oyun bitti.")
             QMessageBox.critical(self, "Oyun Bitti", "Tüm siteler enfekte veya çöktü. Oyun bitti!")
             self.game_timer.stop()
+            self.global_event_timer.stop()
 
-    # ------------------------
-    # Aksiyon Fonksiyonları
-    # ------------------------
+    def global_event(self):
+        # Rastgele global olaylar:
+        event_type = random.choice(["virus_outbreak", "bonus_credit", "system_update", "emergency_ddos"])
+        if event_type == "virus_outbreak":
+            self.log_event("Global Siber Salgın: Tüm sitelerde toplu enfeksiyon riski!")
+            for website in self.websites:
+                if not website.protected and not website.crashed:
+                    if random.random() < 0.3:
+                        website.infect("Global Outbreak")
+            self.update_website_list()
+        elif event_type == "bonus_credit":
+            bonus = random.randint(50, 150)
+            self.credits += bonus
+            self.log_event(f"Bonus Kredi Etkinliği: +{bonus} kredi kazandınız!")
+            self.info_label.setText(f"Kredi: {self.credits} | Skor: {self.score}")
+        elif event_type == "system_update":
+            self.log_event("Sistem Güncellemesi: Tüm sitelerde geçici otomatik temizlik gerçekleşti!")
+            for website in self.websites:
+                if website.is_infected and random.random() < 0.5:
+                    website.clean()
+            self.update_website_list()
+        elif event_type == "emergency_ddos":
+            self.log_event("Acil Durum: Global DDoS saldırısı başlatıldı!")
+            for website in self.websites:
+                if website.cracked and not website.crashed:
+                    website.ddos()
+            self.update_website_list()
+
     def scan_website(self):
         selected_items = self.website_list.selectedItems()
         if not selected_items:
@@ -485,7 +499,6 @@ class GameBoardWidget(QWidget):
         result = None
         for tool in self.owned_tools:
             if isinstance(tool, Antivirus):
-                # Eğer gelişmiş antivirüs kullanılıyorsa, apply() metodu "false_positive" dönebilir.
                 res = tool.apply(website)
                 if res == "false_positive":
                     self.score -= 10
@@ -571,7 +584,6 @@ class GameBoardWidget(QWidget):
             return
         index = self.website_list.row(selected_items[0])
         website = self.websites[index]
-        # Kullanıcının firewall aracı varsa, ondan en iyisini seçiyoruz.
         fw_tool = None
         for tool in self.owned_tools:
             if isinstance(tool, Firewall):
@@ -580,17 +592,14 @@ class GameBoardWidget(QWidget):
         if fw_tool is None:
             QMessageBox.warning(self, "Uyarı", "Herhangi bir firewall aracı satın alınmamış!")
             return
-        # Seçilen siteye firewall kur.
         if fw_tool.apply(website):
             self.log_event(f"{website.url} için {fw_tool.name} başarıyla kuruldu.")
             QMessageBox.information(self, "Firewall", "Firewall başarıyla kuruldu!")
-            # Firewall etkisi 30 saniye sürecek; ardından site koruması kaldırılır.
             timer = QTimer(self)
             timer.setSingleShot(True)
             timer.timeout.connect(lambda: self.remove_firewall_effect(website))
             timer.start(30000)
             self.firewall_effects[website] = timer
-            # Kullanılan firewall aracı devreden çıkar.
             self.owned_tools.remove(fw_tool)
         else:
             self.log_event("Firewall kurulamadı.")
@@ -725,7 +734,6 @@ class GameBoardWidget(QWidget):
         self.info_label.setText(f"Kredi: {self.credits} | Skor: {self.score}")
 
     def upgrade_antivirus(self):
-        # Antivirus imza güncellemesi: 100 kredi ödeyerek tüm satın alınmış antivirüs araçlarının gücü 0.05 artar (30 saniye)
         if self.credits < 100:
             QMessageBox.warning(self, "Upgrade", "Yeterli kredi yok!")
             return
@@ -736,7 +744,6 @@ class GameBoardWidget(QWidget):
                 if tool not in self.upgraded_antiviruses:
                     self.upgraded_antiviruses[tool] = tool.power
                     tool.power = min(tool.power + 0.05, 0.99)
-        # 30 saniye sonra yükseltmeyi geri alacak timer
         timer = QTimer(self)
         timer.setSingleShot(True)
         timer.timeout.connect(self.revert_antivirus_upgrade)
@@ -785,6 +792,11 @@ class GameWindow(QMainWindow):
         self.game_board = GameBoardWidget(self)
         self.central_widget.addWidget(self.game_board)
         self.apply_styles()
+        # 10 dakikalık oyun süresi (600000 ms) dolduğunda oyunu bitir.
+        self.end_timer = QTimer()
+        self.end_timer.setSingleShot(True)
+        self.end_timer.timeout.connect(self.end_game)
+        self.end_timer.start(600000)  # 10 dakika
 
     def apply_styles(self):
         style = """
@@ -798,6 +810,12 @@ class GameWindow(QMainWindow):
         QTreeWidget { background-color: #1e1e1e; }
         """
         self.setStyleSheet(style)
+
+    def end_game(self):
+        self.game_board.log_event("10 dakika doldu! Oyun sona erdi.")
+        QMessageBox.information(self, "Oyun Bitti", "10 dakika doldu. Oyun sona erdi!")
+        self.game_board.game_timer.stop()
+        self.game_board.global_event_timer.stop()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
